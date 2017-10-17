@@ -44,6 +44,8 @@
 
 <script type="text/javascript">
 
+DATA_URL = 'https://rudy-hasbun.000webhostapp.com/vol.php';
+
 ELEC = {};
 elecDone = true;
 OTC = [];
@@ -274,7 +276,7 @@ function getOTCData() {
 
 	var date = $('#selectDate').val();
 
-	$.get( "vol.php?type=OTC&date="+date, function( data ) {
+	$.get( DATA_URL+"?type=OTC&date="+date, function( data ) {
 		var html = $.parseHTML(data);	
 
 		var array = [];
@@ -387,7 +389,7 @@ function getFUTDataQuote(callback) {
 
 	// contracts is comma separated items like "CLQ7"
 
-	$.get( "vol.php", {type:'FUTquote', contracts:dates.join(',')}, function( data ) {
+	$.get( DATA_URL, {type:'FUTquote', contracts:dates.join(',')}, function( data ) {
 		var obj = JSON.parse(data);	
 
 		if (typeof obj != 'object' || typeof obj.quotes != 'object') {
@@ -436,7 +438,7 @@ function getFUTDataQuote(callback) {
 
 				// contracts is comma separated items like "LOJ7+C4650"
 
-				$.get( "vol.php", {type:'OPTquote', contracts:contracts.join(',')}, function( data1 ) {
+				$.get( DATA_URL, {type:'OPTquote', contracts:contracts.join(',')}, function( data1 ) {
 					var obj1 = JSON.parse(data1);	
 
 					if (typeof obj1 != 'object' || typeof obj1.optionContractQuotes != 'object') {
@@ -514,7 +516,7 @@ function getFUTDataSettle(date, callback) {
 
 	var stopDate = moment().add(MONTHS_OUT, 'months');
 
-	$.get( "vol.php?type=FUTsettle&date="+date, function( data ) {		
+	$.get( DATA_URL+"?type=FUTsettle&date="+date, function( data ) {		
 
 		var obj = JSON.parse(data);	
 
@@ -568,7 +570,7 @@ function getFUTDataSettle(date, callback) {
 					return;
 				}
 
-				$.get( "vol.php?type=OPTsettle&date="+date+'&contract=LO&monthYear='+yearMonth, function( data1 ) {
+				$.get( DATA_URL+"?type=OPTsettle&date="+date+'&contract=LO&monthYear='+yearMonth, function( data1 ) {
 					var obj1 = JSON.parse(data1);	
 
 					if (typeof obj1 != 'object' || typeof obj1.settlements != 'object') {
