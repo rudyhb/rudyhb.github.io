@@ -1,1 +1,846 @@
-<meta http-equiv="refresh" content="0; url=billingEntities.html" />
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Crude Vol</title>
+
+<script src="/assets/jquery.min.js"></script>
+<script src="/assets/Chart.min.js"></script>
+<script src="/assets/moment.min.js"></script>
+<script src="impliedVolatility.js"></script>
+
+<style type="text/css">
+.loader {
+    border: 16px solid #f3f3f3; /* Light grey */
+    border-top: 16px solid #3498db; /* Blue */
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+</style>
+
+</head>
+<body>
+<div>
+	<h1 style="display: inline-block;margin-right: 20px">WTI Options Volatility NYMEX</h1>
+	<select id="selectDate"></select>
+	<select id="selectContract">
+		<option value="LO">LO</option>
+	</select>
+	<p style="display: inline-block;margin-left: 10px">Risk-free rate:&nbsp;<input type="number" min="0" max="100" id="rfRate" value="1">&nbsp;%</p>
+	<!--<a href="javascript:void(0)" class="refresh">Refresh</a>-->
+	<div class="loader" style="display: none;float:right;margin-top: 10px;margin-right: 20px"></div>
+</div>
+<div class="wrap" style="margin:20px 50px">
+	<canvas id="myChart"  max-height="400px"></canvas>
+</div>
+
+
+<script type="text/javascript">
+
+ELEC = {};
+elecDone = true;
+OTC = [];
+otcDone = true;
+refreshed = false;
+
+MONTHS_OUT = 24; // how many months in the future to ask for data
+
+$(function(){
+
+	var j = 0;
+	for (var i = 0; i < 5; i++) {
+
+		if (moment().subtract(i,'days').format('ddd') == 'Sun') {
+			j += 2;
+		} else if (moment().subtract(i,'days').format('ddd') == 'Sat') {
+			j += 1;
+		}
+
+		$('#selectDate').append(
+			$('<option value="'+
+			moment().subtract(j,'days').format('MMDDYYYY')	
+			+'">'+
+			moment().subtract(j,'days').format('ddd MMM Do YYYY')
+			+'</option>'));
+		j++;
+	}	
+
+	$('#selectDate').change(function(){
+		refresh();
+	});
+
+
+	$('.refresh').click(function(){
+		refresh();
+	});
+
+	(function(){
+
+		if (!refreshed) refresh();
+
+	    setTimeout(arguments.callee, 120000);
+	})();
+
+});
+
+function refresh() {
+	refreshed = true;
+
+	$('.loader').show();
+
+	getOTCData();
+	getFUTData();
+
+}
+
+function updatePlot() {
+
+	var options_contract = 'LO';
+
+	var plotData = {
+	    datasets: [
+	        {
+	            label: 'OTC',
+	            data: [],
+	            //backgroundColor:"#FF6384",
+	            //hoverBackgroundColor: "#FF6384",
+	        },
+	        {
+	            label: 'Screen',
+	            data: [],
+	            backgroundColor:'rgba(54, 162, 235, 0.4)',
+	            hoverBackgroundColor: 'rgba(54, 162, 235, 1)',
+	        }]
+	};
+
+	var minX = 100;
+
+	OTC.forEach(function(item){
+
+		var r = Math.round(Math.log(item.quantity)*10);
+		if (r < 10) {
+			r = 10;
+		} else if (r > 100) {
+			r = 100;
+		}
+
+		var vol = parseFloat(item.vol);
+		var xval = exp2num(item.exp);
+
+		if (vol) plotData.datasets[0].data.push({
+			x: xval,
+			y: vol,
+			r: r,
+			text:item.text
+		});
+
+		minX = Math.min(minX,xval);
+	});
+	
+	Object.keys(ELEC).forEach(function(key){
+		var r = 30;
+
+		var vol = parseFloat(ELEC[key].vol);
+
+		if (vol) plotData.datasets[1].data.push({
+			x: exp2num(key),
+			y: vol,
+			r: r,
+			text:ELEC[key].text
+		});
+
+	});
+
+
+/*
+	var plotData = {
+	    datasets: []
+	};
+
+	var datasets = {};
+
+	OTC.forEach(function(item){
+
+		var exp = num2exp(exp2num(item.exp));
+
+		if (typeof datasets[exp] == 'undefined') {
+			datasets[exp] = {
+	            label: exp,
+	            data: []
+			};
+		}
+
+		var r = Math.round(Math.log(item.quantity)*10);
+		if (r < 10) {
+			r = 10;
+		} else if (r > 100) {
+			r = 100;
+		}
+
+		datasets[exp].data.push({
+			x: exp2num(item.exp),
+			y: item.vol,
+			r: r
+		});
+	});
+
+	Object.keys(datasets).forEach(function(key){
+		plotData.datasets.push(datasets[key]);
+	});
+*/
+
+	var wrap = $('#myChart').closest('.wrap');
+	wrap.empty();
+	wrap.append($('<canvas id="myChart"  max-height="400px"></canvas>'));
+
+	var ctx = $('#myChart').get(0);
+
+	var myBubbleChart = new Chart(ctx,{
+	    type: 'bubble',
+	    data: plotData,
+	    options: {
+	        scales: {
+	            xAxes: [{
+	            	type: 'logarithmic',
+	            	position: 'bottom',
+	                ticks: {
+	                	min: minX-1,
+	                    callback: function(value, index, values) {
+	                        return num2exp(value);
+	                    }
+	                }
+	            }]
+	        },
+			tooltips: {
+                enabled: true,
+                mode: 'nearest',
+                callbacks: {
+                    label: function(tooltipItems, data) { 
+                        return num2exp(tooltipItems.xLabel) + ' ' + data.datasets[tooltipItems.datasetIndex].data[tooltipItems.index].text;
+                    }
+                }
+            }
+
+    	}
+	});
+
+
+refreshed = false;
+
+$('.loader').hide();
+}
+
+function updateVol() {
+	if (!elecDone || !otcDone) return;
+
+	var rfRate = parseFloat($('#rfRate').val()) / 100;
+	var isAmerican = 1; // change for non-LO
+
+	for (var i = 0; i < OTC.length; i++) {
+
+		var vol = NaN;
+		var underlying = NaN;
+
+		if (typeof ELEC == 'object' && typeof ELEC[OTC[i].exp] == 'object') {
+
+			var underlying = ELEC[OTC[i].exp].underlying;
+			var isCall = OTC[i].type == 'C' ? 1 : 0;
+			var strike = parseFloat(OTC[i].strike);
+
+			//var vol = impliedVolatility(isAmerican, isCall, futurePrice, strikePrice, timeToExp, rfRate, optionPrice);
+			var vol = impliedVolatility(isAmerican, isCall, underlying, strike/100, OTC[i].timeToExp, rfRate, OTC[i].price);
+
+			OTC[i]['vol'] = vol;
+
+			OTC[i]['text'] += ' ('+(Math.round(vol*1e3)/1e3).toString()+')';
+
+		}
+	}
+
+	updatePlot();
+}
+
+function getOTCData() {
+	otcDone = false;
+
+	var options_contract = 'LO';	
+
+	var date = $('#selectDate').val();
+
+	$.get( "vol.php?type=OTC&date="+date, function( data ) {
+		var html = $.parseHTML(data);	
+
+		var array = [];
+
+		$(html).find('.dataRow').each(function(index, row){
+
+			var code = "";
+			var price = "";
+			var quantity = "";
+			var time = "";
+
+			var i = 0;
+			$(row).find('td').each(function(ind, cell){
+				i++;
+				switch(i){
+					case 1:
+						code = $(cell).text();
+					break;
+					case 6:
+						price = parseFloat($(cell).text())/100;
+					break;
+					case 7:
+						quantity = parseInt($(cell).text());
+					break;
+					case 8:
+						time = $(cell).text();
+					break;
+					default:
+					break;
+				}
+
+			});
+
+			var codes = code.split('|');
+
+			var contract = codes[0].substring(0, codes[0].length - 2);
+			var dateCode = codes[0].substring(codes[0].length - 2);
+
+			var strike = codes[1].substring(0, codes[1].length - 1);
+			var putOrCall = codes[1].substring(codes[1].length - 1);
+
+			var timeToExp = parseInt(moment(getExpiration(contract, dateCode)+' 13:30', 'YYYYMMDD HH:mm').format('X')) -
+				parseInt(moment( ( date+' '+time.substring(0,8) ) , 'MMDDYYYY HH:mm:ss').format('X')); // seconds
+			timeToExp /= 3.154e+7; // years
+
+			var text = 
+				(parseInt(strike)/100).toString() + putOrCall.toLowerCase() + ' @ '+price+'  '+quantity+'x' + '  ' +
+				time
+			
+			;
+
+			if (contract == options_contract) {
+				array.push({
+					contract:contract,
+					exp:dateCode,
+					strike:strike,
+					type:putOrCall,
+					price:price,
+					quantity:quantity,
+					time:time,
+					timeToExp:timeToExp,
+					text:text
+				});
+			}
+
+
+		});
+
+		OTC = array;
+		otcDone = true;
+		updateVol();
+
+	});
+}
+
+function getFUTData() {
+	elecDone = false;
+	var date = $('#selectDate').val();
+
+	if (date == moment().format('MMDDYYYY')) {
+		getFUTDataQuote(function(){
+			elecDone=true;
+			updateVol();
+		});
+	} else { // only available after today's close
+		getFUTDataSettle(date, function(){
+			elecDone=true;
+			updateVol();
+		});
+	}
+
+}
+
+function getFUTDataQuote(callback) {
+	var dates = [];
+
+	var future_contract = 'CL';
+	var options_contract = 'LO';
+	var isAmerican = 1;
+	var rfRate = parseFloat($('#rfRate').val()) / 100;
+
+	for (var i=0;i<MONTHS_OUT;i++) {
+		dates.push(
+			future_contract +
+			numberToMonth( parseInt(moment().add(i, 'months').format('M')) ) + 
+			moment().add(i, 'months').format('YY').substring(1,2)
+		);
+	}
+
+
+	// contracts is comma separated items like "CLQ7"
+
+	$.get( "vol.php", {type:'FUTquote', contracts:dates.join(',')}, function( data ) {
+		var obj = JSON.parse(data);	
+
+		if (typeof obj != 'object' || typeof obj.quotes != 'object') {
+			console.log('error getting futures quotes');
+			return;
+		}		
+
+		var end = obj.quotes.length;
+
+		var stop = false;
+
+		var array = {};
+
+		(function myLoop (counter) {          
+			setTimeout(function () {   
+
+				var item = obj.quotes[counter];
+				var monthCode = item.quoteCode.substring(item.quoteCode.length - 2);
+
+				var timeToExp = parseInt(moment(getExpiration(options_contract, monthCode)+' 13:30', 'YYYYMMDD HH:mm').format('X')) -
+					parseInt(moment().format('X')); // seconds
+				timeToExp /= 3.154e+7; // years
+
+				if (timeToExp < 0) {
+
+					counter++;
+					if (end > counter) { // continue loop
+						myLoop(counter);
+					} else { // stop
+						ELEC = array;
+						callback();
+					}
+					return;
+				}
+
+				var price = parseFloat(item.last) || parseFloat(item.priorSettle);
+				var strikePrice = Math.round((price)*2)/2 * 100; // round to nearest 0.50. Show without decimal
+
+				var contracts = [];
+
+				for (var i = 0; i < 3; i++) {
+					contracts.push(
+						options_contract + monthCode + '+' + 'C' + (strikePrice - (50*(1-i)).toString())
+						);
+				}
+
+				// contracts is comma separated items like "LOJ7+C4650"
+
+				$.get( "vol.php", {type:'OPTquote', contracts:contracts.join(',')}, function( data1 ) {
+					var obj1 = JSON.parse(data1);	
+
+					if (typeof obj1 != 'object' || typeof obj1.optionContractQuotes != 'object') {
+						console.log('error getting options settlements');
+						return;
+					}
+
+					var BreakException = {};
+					var optPrice;
+					var strike = strikePrice;
+					try {
+
+						obj1.optionContractQuotes.forEach(function(item1){
+
+							if ( Math.abs(parseInt(item1.strikePrice) - strikePrice) < 60 ) { // close
+								optPrice = (parseFloat(item1.call.last) || parseFloat(item1.call.priorSettle)) || optPrice;
+								strike = parseFloat(item1.strikePrice) || strikePrice;
+							}
+
+							if ( parseInt(item1.strikePrice) == strikePrice ){ // correct (but not good 100% of the time)
+								optPrice = (parseFloat(item1.call.last) || parseFloat(item1.call.priorSettle)) || optPrice;
+								strike = parseFloat(item1.strikePrice) || strikePrice;
+								if (optPrice)
+									throw BreakException;
+							}
+
+						});
+
+					} catch (e) {
+					  if (e !== BreakException) throw e;
+					}
+
+
+					//var vol = impliedVolatility(isAmerican, isCall, futurePrice, strikePrice, timeToExp, rfRate, optionPrice);
+					var vol = impliedVolatility(isAmerican, 1, price, strike/100, timeToExp, rfRate, optPrice);
+
+					var text = (parseInt(strike)/100).toString() + 'c @ '+optPrice + ' ('+(Math.round(vol*1e3)/1e3).toString()+')';
+
+					array[monthCode] = {
+						future:future_contract,
+						underlying:price,
+						contract:options_contract,
+						strike:strike,
+						type:'C',
+						price:optPrice,
+						timeToExp: timeToExp,
+						vol:vol,
+						text:text				
+					};
+
+
+				});				
+
+				counter++;
+				if (end > counter) { // continue loop
+					myLoop(counter);
+				} else { // stop
+					ELEC = array;
+					callback();
+				}
+
+			}, 250)
+		})(0); 
+
+	});
+
+}
+
+function getFUTDataSettle(date, callback) {
+
+	//var future_contract = 'CL';
+	//var options_contract = 'LO';
+	var isAmerican = 1;
+	var rfRate = parseFloat($('#rfRate').val()) / 100;
+
+	var stopDate = moment().add(MONTHS_OUT, 'months');
+
+	$.get( "vol.php?type=FUTsettle&date="+date, function( data ) {		
+
+		var obj = JSON.parse(data);	
+
+		if (typeof obj != 'object' || typeof obj.settlements != 'object') {
+			console.log('error getting futures settlements');
+			return;
+		}
+
+		var end = obj.settlements.length;
+
+		var stop = false;
+
+		var array = {};
+
+		(function myLoop (counter) {          
+			setTimeout(function () {   
+
+				var item = obj.settlements[counter];
+
+				var month = item.month;
+				var price = parseFloat(item.last);
+				var settle = parseFloat(item.settle);
+
+				var months = month.split(' ');
+
+				var m = encodeStupidCmeMonths(months[0]);
+
+				var checkStop = moment(decodeMonth(m)+'-'+months[1], 'MMMM-YY');
+
+				if (checkStop > stopDate) stop = true;
+
+				var yearMonth = m + months[1];
+
+				var monthCode = m + months[1].substring(1);
+
+				var strikePrice = Math.round((settle||price)*2)/2 * 100; // round to nearest 0.50. Show without decimal
+
+				var timeToExp = parseInt(moment(getExpiration('LO', monthCode)+' 13:30', 'YYYYMMDD HH:mm').format('X')) -
+					parseInt(  moment(date+' 13:30', 'MMDDYYYY HH:mm').format('X')  ); // seconds
+				timeToExp /= 3.154e+7; // years
+
+				if (timeToExp < 0) {
+
+					counter++;
+					if (end > counter && !stop) { // continue loop
+						myLoop(counter);
+					} else { // stop
+						ELEC = array;
+						callback();
+					}
+					return;
+				}
+
+				$.get( "vol.php?type=OPTsettle&date="+date+'&contract=LO&monthYear='+yearMonth, function( data1 ) {
+					var obj1 = JSON.parse(data1);	
+
+					if (typeof obj1 != 'object' || typeof obj1.settlements != 'object') {
+						console.log('error getting options settlements');
+						return;
+					}
+
+					var BreakException = {};
+					var optPrice;
+					var strike = strikePrice;
+					try {
+
+						obj1.settlements.forEach(function(item1){
+
+							if ( item1.type == 'Call' && Math.abs(parseInt(item1.strike) - strikePrice) < 60 ) { // close
+								optPrice = (parseFloat(item1.settle) || parseFloat(item1.last))||optPrice;
+								strike = parseFloat(item1.strike) || strikePrice;
+							}
+
+							if ( item1.type == 'Call' && parseInt(item1.strike) == strikePrice ){ // correct (but not good 100% of the time)
+								optPrice = (parseFloat(item1.settle) || parseFloat(item1.last))||optPrice;
+								strike = parseFloat(item1.strike) || strikePrice;
+								if (optPrice)
+									throw BreakException;
+							}
+
+						});
+
+					} catch (e) {
+					  if (e !== BreakException) throw e;
+					}
+
+					//var vol = impliedVolatility(isAmerican, isCall, futurePrice, strikePrice, timeToExp, rfRate, optionPrice);
+					var vol = impliedVolatility(isAmerican, 1, settle, strike/100, timeToExp, rfRate, optPrice);
+
+					var text = (parseInt(strike)/100).toString() + 'c @ '+optPrice + ' ('+(Math.round(vol*1e3)/1e3).toString()+')';
+
+					array[monthCode] = {
+						future:'CL',
+						underlying:settle,
+						contract:'LO',
+						strike:strike,
+						type:'C',
+						price:optPrice,
+						timeToExp: timeToExp,
+						vol:vol,
+						text:text
+					};
+
+
+				});				
+
+				counter++;
+				if (end > counter && !stop) { // continue loop
+					myLoop(counter);
+				} else { // stop
+					ELEC = array;
+					callback();
+				}
+
+			}, 250)
+		})(0); 
+
+	});
+
+}
+
+// num = months since Dec 2016
+function exp2num(exp) {
+	var month = monthToNumber(exp.substring(0,1));
+
+	var year = parseInt(exp.substring(1));
+
+	if (year < 7) {
+		year = 20 + year;
+	} else {
+		year = 10 + year;
+	}
+
+	var num = month + (year - 17)*12;
+
+	return num;
+}
+
+// num = months since Dec 2016
+function num2exp(num) {
+
+	return moment('20161201', 'YYYYMMDD').add(num, 'months').format('MMM YY')
+
+}
+
+function numberToMonth(num) {
+	switch(num) {
+		case 1: return 'F';
+		case 2: return 'G';
+		case 3: return 'H';
+		case 4: return 'J';
+		case 5: return 'K';
+		case 6: return 'M';
+		case 7: return 'N';
+		case 8: return 'Q';
+		case 9: return 'U';
+		case 10: return 'V';
+		case 11: return 'X';
+		case 12: return 'Z';		
+	}		
+}
+
+function monthToNumber(month) {
+	switch(month) {
+		case 'F': return 1;
+		case 'G': return 2;
+		case 'H': return 3;
+		case 'J': return 4;
+		case 'K': return 5;
+		case 'M': return 6;
+		case 'N': return 7;
+		case 'Q': return 8;
+		case 'U': return 9;
+		case 'V': return 10;
+		case 'X': return 11;
+		case 'Z': return 12;
+	}
+}
+
+function decodeMonth(code) {
+	switch(code) {
+		case 'F': return 'January';
+		case 'G': return 'February';
+		case 'H': return 'March';
+		case 'J': return 'April';
+		case 'K': return 'May';
+		case 'M': return 'June';
+		case 'N': return 'July';
+		case 'Q': return 'August';
+		case 'U': return 'September';
+		case 'V': return 'October';
+		case 'X': return 'November';
+		case 'Z': return 'December';
+	}
+}
+
+function encodeMonth(month) {
+	switch(month) {
+		case 'January': return 'F';
+		case 'February': return 'G';
+		case 'March': return 'H';
+		case 'April': return 'J';
+		case 'May': return 'K';
+		case 'June': return 'M';
+		case 'July': return 'N';
+		case 'August': return 'Q';
+		case 'September': return 'U';
+		case 'October': return 'V';
+		case 'November': return 'X';
+		case 'December': return 'Z';		
+	}
+}
+
+function encodeStupidCmeMonths(month) {
+	switch(month) {
+		case 'JAN': return 'F';
+		case 'FEB': return 'G';
+		case 'MAR': return 'H';
+		case 'APR': return 'J';
+		case 'MAY': return 'K';
+		case 'JUN': return 'M';
+		case 'JLY': return 'N';
+		case 'AUG': return 'Q';
+		case 'SEP': return 'U';
+		case 'OCT': return 'V';
+		case 'NOV': return 'X';
+		case 'DEC': return 'Z';		
+	}	
+}
+
+// source: http://www.cmegroup.com/tools-information/calendars/expiration-calendar/
+function getExpiration(contract, dateCode) {
+
+	switch(contract) {
+
+		case 'LO':
+			switch(dateCode) {
+				case 'J7': return '20170316';
+				case 'K7': return '20170417';
+				case 'M7': return '20170517';
+				case 'N7': return '20170615';
+				case 'Q7': return '20170717';
+				case 'U7': return '20170817';
+				case 'V7': return '20170915';
+				case 'X7': return '20171017';
+				case 'Z7': return '20171115';
+
+				case 'F8': return '20171214';
+				case 'G8': return '20180117';
+				case 'H8': return '20180214';
+				case 'J8': return '20180315';
+				case 'K8': return '20180417';
+				case 'M8': return '20180517';
+				case 'N8': return '20180615';
+				case 'Q8': return '20180717';
+				case 'U8': return '20180816';
+				case 'V8': return '20180917';
+				case 'X8': return '20181017';
+				case 'Z8': return '20181114';
+
+				case 'F9': return '20181214';
+				case 'G9': return '20190116';
+				case 'H9': return '20190214';
+				case 'J9': return '20190315';
+				case 'K9': return '20190416';
+				case 'M9': return '20190516';
+				case 'N9': return '20190617';
+				case 'Q9': return '20190717';
+				case 'U9': return '20190815';
+				case 'V9': return '20190917';
+				case 'X9': return '20191017';
+				case 'Z9': return '20191115';
+
+				case 'F0': return '20191216';
+				case 'G0': return '20200115';
+				case 'H0': return '20200214';
+				case 'J0': return '20200317';
+				case 'K0': return '20200416';
+				case 'M0': return '20200514';
+				case 'N0': return '20200617';
+				case 'Q0': return '20200716';
+				case 'U0': return '20200817';
+				case 'V0': return '20200917';
+				case 'X0': return '20201015';
+				case 'Z0': return '20201117';												
+
+				case 'F1': return '20201216';
+
+				default: break;
+			}
+			break;
+
+		default:
+			break;
+
+	}
+
+	var year = parseInt(dateCode.substring(1));
+	var month = monthToNumber(dateCode.substring(0,1));
+
+	if (month == 1) {
+		month = 12;
+		if(year == 0) {
+			year = 9;
+		} else {
+			year--;
+		}
+	} else {
+		month--;
+	}
+
+	if (year > 6) {
+		year = '201' + year.toString();
+	} else {
+		year = '202' + year.toString();
+	}	
+
+	if (month < 10) {
+		month = '0'+month.toString();
+	} else {
+		month = month.toString();
+	}
+
+	return ( year+month+'15' );		
+}
+
+</script>
+</body>
+</html>
