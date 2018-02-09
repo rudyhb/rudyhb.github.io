@@ -85,6 +85,7 @@
                     </form>
                 </div>
                 <a onclick="channelSetup.add();" href="javascript:void(0);" class="btn btn-sm btn-outline-primary">+ add channel</a>
+                <a onclick="channelSetup.addChannels();" href="javascript:void(0);" class="btn btn-sm btn-outline-primary">+ add <input type="number" min="1" max="50" step="1" id="addChannelQuant" placeholder="num" value="7"></a>
                 <a onclick="channelSetup.auto();" href="javascript:void(0);" class="btn btn-sm btn-outline-info">auto assign simple</a>
                 <a onclick="channelSetup.autoProduct();" href="javascript:void(0);" class="btn btn-sm btn-outline-success">auto assign by product</a>
             </div>
@@ -161,6 +162,12 @@
         $('.form1:not(#inputProducts),.form2').on('change.custom', channels.update);
         $('#inputProducts').on('change.custom', channelSetup.update);
 
+        $('#addChannelQuant').click(function(ev){
+            if (ev.stopPropagation) {
+                ev.stopPropagation();
+            }
+        });
+
     });
 
         var channels = (function(){
@@ -174,7 +181,7 @@
                 var y0 = 1e6 * ( rand(`s${_seed}p${product}`) % 4 + 3 ) / 4;
                 var x0 = ( (rand(`s${_seed}p${product}8`) % 4) === 0 ? 0 : 1 ) * (2*(rand(`s${_seed}p${product}2`) % 2) - 1) * ( rand(`s${_seed}p${product}3`) % 337 )/336 * 1900;
                 var k0 = .1 + .4 * ( rand(`s${_seed}p${product}4`) % 101 )/100;
-                var k = k0 * y0 / (Math.abs(x0) >= 1 ? Math.abs(x0) : 1 );
+                var k = k0 * y0 / Math.max(Math.abs(x0), 1);
                 var dk = 1.7 + .4 * ( rand(`s${_seed}p${product}5`) % 101 )/100;
                 var dx = Math.abs((0.1 + .8 * ( rand(`s${_seed}p${product}6`) % 101 )/100) * x0);
 
@@ -284,6 +291,7 @@
 
                 newEquation: function() {
                     _seed = Date.now();
+                    toastr['success']('equation changed');
                 },
                 
                 update: function() {
@@ -357,9 +365,9 @@
                         prod.forEach(function(p, i){
                             if (p.channel === null) {
                                 if (!channel1[channel1i]) {
-                                    channel1[channel1i] = p.quant.toString();
+                                    channel1[channel1i] = Math.round(p.quant).toString();
                                 }
-                                previous = p.quant;
+                                previous = Math.round(p.quant);
                                 p.channel = 1;
                             } else {
                                 if (previous !== '') {
@@ -435,6 +443,17 @@
                     $('div.channel').last().after(tmp);
                     update();
                 },
+                addChannels: function(elem) {
+                    var amount = parseInt($('#addChannelQuant').val());
+                    for (let i = 0; i < amount; i++) {
+                        let number = $('div.channel').length + 1;
+                        let tmp = $( $('#panelTemplate').html() );
+                        tmp.removeClass('tmp').addClass('channel').find('.channelNum').text(number);
+                        $('div.channel').last().after(tmp);
+                    }
+                    update();
+                    channelSetup.autoProduct();
+                },
                 remove: function(element) {
                     $(element).closest('.channel').remove();
                     $('div.channel').each(function(i){
@@ -455,7 +474,7 @@
                         var channelNum = parseInt($(this).find('.channelNum').text());
                         if (channelNum !== 1) {
                             var tmp =  previous - step;                           
-                            var text = `${tmp}-${previous}`;
+                            var text = `${Math.round(tmp)}-${Math.round(previous)}`;
                             previous = tmp;
                             $(this).find('input.range').val(text);
                             $(this).find('input[name="product"]').prop('checked', true);
@@ -490,7 +509,7 @@
                             var channelNum = parseInt($(this).find('.channelNum').text());
                             if (channelNum !== 1) {
                                 var tmp =  previous - step;                           
-                                var text = `${tmp}-${previous}`;
+                                var text = `${Math.round(tmp)}-${Math.round(previous)}`;
                                 previous = tmp;
                                 for (let i = numProducts - 1; i >= productNum; i--) {
                                     $(this).find('input.range').eq(i).val(text);
@@ -566,7 +585,7 @@
         }());
 
         var getRandomColor = (function(){
-            var seed = 123456789;
+            var seed = 1234567;
             var letters = '0123456789ABCDEF'.split('');
 
             return function(i) {
