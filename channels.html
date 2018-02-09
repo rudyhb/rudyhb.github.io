@@ -383,11 +383,11 @@
             var id = 0;
             var addProduct = function(panel) {
                 panel = $(panel).closest('.channel');
-                var label = id++;
+                var label = 'prodcheck' + (id++);
                 var index = parseInt(panel.find('.channelNum').text());
                 var tmp = $($('#productTemplate').html());
                 tmp.find('.productName').text(getProduct(panel.find('form .productbox').length));
-                tmp.find('input[name="product"]').attr('id', label);
+                tmp.find('input[name="product"]').attr('id', label).on('change', channels.update);
                 tmp.find('label').attr('for', label);
                 if (index === 1) {
                     tmp.find('input').prop('disabled', true);
