@@ -116,6 +116,7 @@
                 </div>
                 <div class="btn-group mr-2" role="group" aria-label="Second group">
                     <button onclick="channels.newEquation();" type="button" class="btn btn-sm btn-outline-info">new random equation</button>
+                    <button onclick="randColor.change();" type="button" class="btn btn-sm btn-outline-primary">new colors!</button>
                 </div>
             </div>
         </div>
@@ -256,7 +257,7 @@
                         _charts[i].data.datasets = [];
                         for (let j = 1; j <= numChannels; j++) {
                             _charts[i].data.labels.push(`channel ${j}`);
-                            var color = getRandomColor(j);
+                            var color = randColor.get(j);
                             _charts[i].data.datasets.push({
                                 label: `channel ${j}`,
                                 backgroundColor: `rgba(${color.r},${color.g},${color.b},0.5)`,
@@ -584,17 +585,23 @@
             };
         }());
 
-        var getRandomColor = (function(){
+        var randColor = (function(){
             var seed = 1234567;
             var letters = '0123456789ABCDEF'.split('');
 
-            return function(i) {
-                var color = '#';
-                for (var j = 0; j < 6; j++ ) {
-                    color += letters[ rand(seed + i + i*j + 2*j) % 16];
+            return {
+                get: function(i) {
+                    var color = '#';
+                    for (var j = 0; j < 6; j++ ) {
+                        color += letters[ rand(seed + i + i*j + 2*j) % 16];
+                    }
+                    return hexToRgb(color);
+                },
+                change: function() {
+                    seed = Date.now();
+                    toastr['success']('done!');
                 }
-                return hexToRgb(color);
-            }
+            };
         }());
 
     </script>
