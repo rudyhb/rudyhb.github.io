@@ -131,6 +131,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.bundle.min.js"></script>
     <script src="./assets/gaussian.js"></script>
+    <script src="./assets/sha256.min.js"></script>
     <script>
 
     $(function(){
@@ -167,15 +168,15 @@
             var _channels = [];
             var _charts = [];
 
-            var _seed = 0;
+            var _seed = 12;
             
             var f = function(product, quantity) {
-                var y0 = 1e6 * ( (_seed+1 + product*_seed*13) % 4 + 3 ) / 4;
-                var x0 = /*((5*(_seed + 41*product + 1)) % 4 === 3 ? 0 : 1) **/ (2*((3*(_seed + 57*product + 1)) % 2) - 1) * ( (3*(_seed + 57*product) + 84) % 337 )/336 * 2000;
-                var k0 = .1 + .4 * ( (_seed + 50 + 30*_seed*product) % 101 )/100;
-                var k = k0 * y0 / Math.abs(x0);
-                var dk = 1.7 + .4 * ( (2*_seed + 25 + 30*_seed*product) % 101 )/100;
-                var dx = Math.abs((0.1 + .8 * ( (7*_seed + 25 + 33*_seed*product) % 101 )/100) * x0);
+                var y0 = 1e6 * ( rand(`s${_seed}p${product}`) % 4 + 3 ) / 4;
+                var x0 = ( (rand(`s${_seed}p${product}8`) % 4) === 0 ? 0 : 1 ) * (2*(rand(`s${_seed}p${product}2`) % 2) - 1) * ( rand(`s${_seed}p${product}3`) % 337 )/336 * 1900;
+                var k0 = .1 + .4 * ( rand(`s${_seed}p${product}4`) % 101 )/100;
+                var k = k0 * y0 / (Math.abs(x0) >= 1 ? Math.abs(x0) : 1 );
+                var dk = 1.7 + .4 * ( rand(`s${_seed}p${product}5`) % 101 )/100;
+                var dx = Math.abs((0.1 + .8 * ( rand(`s${_seed}p${product}6`) % 101 )/100) * x0);
 
                 if ( quantity < x0 - dx ) {
                     return (  (-dk*k)*(quantity - (x0-dx)) + y0 - k*(-dx) );
@@ -204,7 +205,7 @@
                     var delay = (1000 * parseFloat($('#inputDelay').val())) || 0;
                     var stddev = (1000 * parseFloat($('#inputDelayStd').val())) || 0;
 
-                    var distribution = gaussian(delay, stddev);
+                    randN.init(delay, stddev);
 
                     var numChannels = _channels.length - 1;
                     var numProducts = parseInt($('#inputProducts').val());
@@ -243,7 +244,7 @@
                                     }
                                 }
                             });
-                        }getRandomColor
+                        }
                         _charts[i].data.labels = [];
                         _charts[i].data.datasets = [];
                         for (let j = 1; j <= numChannels; j++) {
@@ -272,7 +273,7 @@
                             });
                             _charts[c[i].prod].update();
                             i++;
-                            _queue[j] = setTimeout(fun, Math.max(0,distribution.ppf(Math.random())));
+                            _queue[j] = setTimeout(fun, Math.max(0,randN.get()));
                         };
                         fun();
                     });
@@ -540,14 +541,38 @@
             } : null;
         }
 
+        var rand = function(string) {
+            var t = sha256(string);
+            return parseInt(t.substring(t.length-5), 16);
+        };
+
+        var randN = (function(){
+            var distribution;
+            return {
+                init: function(delay, stddev){
+                    if (stddev > 0) {
+                        distribution = gaussian(delay, stddev);
+                    } else {
+                        distribution = delay;
+                    }
+                },
+                get: function(){
+                    if (typeof distribution === 'number') {
+                        return distribution;
+                    }
+                    return distribution.ppf(Math.random());
+                }
+            };
+        }());
+
         var getRandomColor = (function(){
-            var seed = 0;
+            var seed = 123456789;
             var letters = '0123456789ABCDEF'.split('');
 
             return function(i) {
                 var color = '#';
                 for (var j = 0; j < 6; j++ ) {
-                    color += letters[(seed + i + i*j + j) % 16];
+                    color += letters[ rand(seed + i + i*j + 2*j) % 16];
                 }
                 return hexToRgb(color);
             }
