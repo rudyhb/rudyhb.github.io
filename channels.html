@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Scenario splitting</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css">    
+    <link rel="stylesheet" href="./assets/styles.css">        
+    <style>
+        .panel {
+            padding:1.5rem;
+            margin-right:0;
+            margin-left:0;
+            border-width: .2rem;
+            margin: 1rem 0 1rem 0;
+            border: solid #f7f7f9;
+        }
+        input.form1 {
+            width:100px;
+        }
+        input.form2 {
+            width:200px;
+        }
+        span.inline input {
+            display:inline-block;
+            margin: 0 10px;
+        }
+    </style>
+</head>
+<body style="padding:20px">
+
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-6">
+
+                    <h3 style="margin-top:20px;margin-left:-50px">GOAL: Minimize <code>f(x)</code></h3>
+                    <p style="margin-bottom:0">where <code>x</code> is a trade in the format</p>
+                    <pre class="default prettyprint prettyprinted" style=""><code>
+        <!--<span class="kwd">var </span>--><span class="pln">x </span><span class="pun">=</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+            product</span><span class="pun">:</span><span class="pln"> </span><span id="exampleProduct" class="str">"WTI"</span><span class="pun">,</span><span class="pln">
+            quantity</span><span class="pun">:</span><span class="pln"> </span><span class="lit">100</span><span class="pln">
+        </span><span class="pun">};</span>
+    </code></pre>
+                
+                <h3 style="margin-top:20px;margin-left:-50px">try it out:</h3>
+                <div class="panel" style="width:80%">
+                    <form>
+                        <div class="form-group row">
+                        <label for="inputProducts" class="col-sm-8 col-form-label"># of products: </label>
+                        <div class="col-sm-4">
+                            <input type="number" min="1" max="20" step="1" value="1" class="form-control form1" id="inputProducts" placeholder="products">
+                        </div>
+                        </div>
+                        <div class="form-group row">
+                        <label for="inputQuantities" class="col-sm-8 col-form-label">Range of quantities: <span id="inputQuantitiesB" style="margin-left:20px;">-2000</span> to </label>
+                        <div class="col-sm-4">
+                            <input type="number" min="100" max="10000" step="1" value="2000" class="form-control form1" id="inputQuantities" placeholder="range">
+                        </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="inputStep" class="col-sm-8 col-form-label">Step: </label>
+                            <div class="col-sm-4">
+                                <input type="number" min="1" max="1000" step="1" value="100" class="form-control form1" id="inputStep" placeholder="step">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="inputDelay" class="col-sm-8 col-form-label">Delay per iteration (sec): </label>
+                            <div class="col-sm-4">
+                                <input type="number" min="0" max="100" value="0.25" class="form-control form1" id="inputDelay" placeholder="delay">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+            <div class="col-lg-6">
+                <div class="panel channel">
+                    <h3 style="margin-bottom:20px">channel <span class="channelNum">1</span></h3>
+                    <form>
+
+                    </form>
+                </div>
+                <a onclick="channelSetup.add();" href="javascript:void(0);" class="btn btn-sm btn-outline-primary">+ add channel</a>
+                <a onclick="channelSetup.auto();" href="javascript:void(0);" class="btn btn-sm btn-outline-info">auto assign</a>
+            </div>
+
+            <div id="panelTemplate" style="display:none;">
+                <div class="panel tmp">
+                    <h3 style="margin-bottom:20px">channel <span class="channelNum"></span></h3>
+                    <a onclick="channelSetup.remove(this);" href="javascript:void(0);" style="position:absolute;top:20px;right:20px;" class="btn btn-sm btn-danger"><i class="fa fa-close"></i></a>
+                    <form>
+
+                    </form>
+                </div>
+            </div>
+            <div id="productTemplate" style="display:none;">
+                <div class="productbox checkbox clip-check check-primary checkbox-inline">
+                    <input type="checkbox" value="1" name="product" id="prodcheck">
+                    <label for="prodcheck">
+                            <span class="inline"><span class="productName"></span> ranges: <input type="text" class="form-control form2 range" placeholder='range (ex: "-50-50,75-100")'></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="btn-toolbar" role="toolbar" aria-label="Toolbar with button groups">
+                <div class="btn-group mr-2" role="group" aria-label="First group">
+                    <button onclick="channels.run();" type="button" class="btn btn-sm btn-outline-success">SIMULATE</button>
+                    <button onclick="channels.stop();" type="button" class="btn btn-sm btn-outline-danger">STOP</button>
+                </div>
+                <div class="btn-group mr-2" role="group" aria-label="Second group">
+                    <button onclick="channels.newEquation();" type="button" class="btn btn-sm btn-outline-info">new random equation</button>
+                </div>
+            </div>
+        </div>
+        <div id="charts">
+
+        </div>
+    </div>
+        
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.20.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.bundle.min.js"></script>
+    <script>
+
+    $(function(){
+
+        toastr.options = {
+            "closeButton": false,
+            "debug": false,
+            "newestOnTop": false,
+            "progressBar": false,
+            "positionClass": "toast-bottom-right",
+            "preventDuplicates": false,
+            "onclick": null,
+            "showDuration": "300",
+            "hideDuration": "1000",
+            "timeOut": "5000",
+            "extendedTimeOut": "1000",
+            "showEasing": "swing",
+            "hideEasing": "linear",
+            "showMethod": "fadeIn",
+            "hideMethod": "fadeOut"
+        };
+
+
+        $('#exampleProduct').text('"'+ getProduct(0) +'"');
+        channelSetup.update();
+
+        $('.form1:not(#inputProducts),.form2').on('change.custom', channels.update);
+        $('#inputProducts').on('change.custom', channelSetup.update);
+
+    });
+
+        var channels = (function(){
+
+            var _channels = [];
+            var _charts = [];
+
+            var _seed = 0;
+            
+            var f = function(product, quantity) {
+                var y0 = 1e6 * ( (_seed+1 + product*_seed*13) % 4 + 3 ) / 4;
+                var x0 = (2*((3*(_seed + 57*product + 1)) % 2) - 1) * ( (3*(_seed + 57*product) + 84) % 337 )/336 * 2000;
+                var k0 = .1 + .4 * ( (_seed + 50 + 30*_seed*product) % 101 )/100;
+                var k = k0 * y0 / Math.abs(x0);
+                var dk = 1.7 + .4 * ( (2*_seed + 25 + 30*_seed*product) % 101 )/100;
+                var dx = Math.abs((0.1 + .8 * ( (7*_seed + 25 + 33*_seed*product) % 101 )/100) * x0);
+
+                if ( quantity < x0 - dx ) {
+                    return (  (-dk*k)*(quantity - (x0-dx)) + y0 - k*(-dx) );
+                }
+                if ( quantity < x0 ) {
+                    return ( y0 - k*(quantity-x0) );
+                }
+                if ( quantity < x0 + dx ) {
+                    return ( y0 + k*(quantity-x0) );
+                }
+                return ( dk*k*(quantity - (x0+dx)) + y0 + k*(dx) );
+            };
+
+            var stop = false;
+
+            return {
+
+                run: function() {
+                    var delay = (1000 * parseFloat($('#inputDelay').val())) || 0;
+
+                    var numChannels = _channels.length - 1;
+                    var numProducts = parseInt($('#inputProducts').val());
+
+                    for (let i = 0; i < numProducts; i++) {
+                        if (!$(`#myChart${i}`).length) {
+                            if (i % 2 === 0) {
+                                $('#charts').append(`<div class="row"><div class="chart col-md-6"></div><div class="chart col-md-6"></div></div>`);
+                                $('#charts div.row').last().find('div.chart').eq(0).append( `<canvas id="myChart${i}" width="400" height="400"></canvas>` );
+                            } else {
+                                $('#charts div.row').last().find('div.chart').eq(1).append( `<canvas id="myChart${i}" width="400" height="400"></canvas>` );
+                            }
+                            
+                        }
+                        if (!_charts[i]) {
+                            _charts[i] = new Chart(`myChart${i}`, {
+                                type: 'scatter',
+                                data: {
+                                    datasets: []
+                                },
+                                options: {
+                                    title: {
+                                        display: true,
+                                        text: getProduct(i)
+                                    },
+                                    scales: {
+                                        xAxes: [{
+                                            type: 'linear',
+                                            position: 'bottom'
+                                        }]
+                                    }
+                                }
+                            });
+                        }getRandomColor
+                        _charts[i].data.labels = [];
+                        _charts[i].data.datasets = [];
+                        for (let j = 1; j <= numChannels; j++) {
+                            _charts[i].data.labels.push(`channel ${j}`);
+                            var color = getRandomColor(j);
+                            _charts[i].data.datasets.push({
+                                label: `channel ${j}`,
+                                backgroundColor: `rgba(${color.r},${color.g},${color.b},0.5)`,
+                                borderColor: `rgba(${color.r},${color.g},${color.b},0.8)`,
+                                data: []
+                            });
+                        }
+                        _charts[i].update();                        
+                    }
+
+                    _channels.forEach(function(c, j){
+                        let i = 0;
+                        let max = c.length;
+                        let fun = function fun() {
+                            if (stop || i >= max) {
+                                return;
+                            }
+                            _charts[c[i].prod].data.datasets[j-1].data.push({
+                                x: c[i].quant,
+                                y: f(c[i].prod, c[i].quant)
+                            });
+                            _charts[c[i].prod].update();
+                            i++;
+                            setTimeout(fun, delay);
+                        };
+                        fun();
+                    });
+
+                },
+
+                stop: function() {
+                    stop = true;
+                    var delay = (1000 * parseInt($('#inputDelay').val())) || 0;
+                    setTimeout(function(){
+                        stop = false;
+                    }, delay + 100);
+                },
+
+                newEquation: function() {
+                    _seed = Date.now();
+                },
+                
+                update: function() {
+                    var products = [];
+                    var numProducts = parseInt($('#inputProducts').val());
+                    for (let i = 0; i < numProducts; i++) {
+                        products.push([]);
+                    }
+                    var end = parseInt($('#inputQuantities').val());
+                    $('#inputQuantitiesB').text(-end);
+                    var step = parseInt($('#inputStep').val());
+                    for (let i = 0; i < ( end/step*2 + 1 ); i++) {
+                        products.forEach(function(p){
+                            p.push({
+                                quant: (-end + step*i),
+                                channel: null
+                            });
+                        });
+                    }
+
+                    $($("div.channel").get().reverse()).each(function() {
+                        var channelNum = parseInt($(this).find('.channelNum').text());
+                        if (channelNum !== 1) {
+                            $(this).find('form .productbox').each(function(productNum){
+                                if ($(this).find('input[name="product"]').prop('checked')) {
+                                    var ranges = ($(this).find('input.range').val() || '').split(',');
+                                    ranges.forEach(range => {
+                                        if (range) {
+                                            var a, b;
+                                            var s = range.split('-');
+                                            switch (s.length) {
+                                                case 1:
+                                                    a = parseInt(s[0]);
+                                                    b = a;
+                                                    break;
+                                                case 2:
+                                                    a = parseInt(s[0]);
+                                                    b = parseInt(s[1]);
+                                                    break;
+                                                case 3:
+                                                    a = parseInt('-'+s[1]);
+                                                    b = parseInt(s[2]);
+                                                    break;
+                                                case 4:
+                                                a = parseInt('-'+s[1]);
+                                                b = parseInt('-'+s[3]);
+                                                    break;
+                                                default:
+                                                    break;
+                                            }
+
+                                            products[productNum].forEach(function(p){
+                                                if (p.channel === null && p.quant >= a && p.quant <= b ) {
+                                                    p.channel = channelNum;
+                                                }
+                                            });                                        
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    });
+
+                    _channels = [];
+
+                    products.forEach(function(prod, pI){
+                        var channel1 = [];
+                        var channel1i = 0;
+                        var previous = '';
+
+                        prod.forEach(function(p, i){
+                            if (p.channel === null) {
+                                if (!channel1[channel1i]) {
+                                    channel1[channel1i] = p.quant.toString();
+                                }
+                                previous = p.quant;
+                                p.channel = 1;
+                            } else {
+                                if (previous !== '') {
+                                    channel1[channel1i] += '-' + previous;
+                                    previous = '';
+                                    channel1i++;
+                                }
+                            }
+                            if (!_channels[p.channel]) {
+                                _channels[p.channel] = [];
+                            }
+                            _channels[p.channel].push({
+                                quant: p.quant,
+                                prod: pI
+                            });
+                        });
+
+                        if (previous !== '' && channel1[channel1i]) {
+                            channel1[channel1i] += '-' + previous;
+                            previous = '';
+                            channel1i++;
+                        }
+                        $("div.channel").eq(0).find('input.range').eq(pI).val( channel1.join(',') );
+                    });                    
+
+                    //console.log('channels', _channels)
+                }
+
+            }
+        }());
+
+        var channelSetup = (function(){
+
+            var id = 0;
+            var addProduct = function(panel) {
+                panel = $(panel).closest('.channel');
+                var label = id++;
+                var index = parseInt(panel.find('.channelNum').text());
+                var tmp = $($('#productTemplate').html());
+                tmp.find('.productName').text(getProduct(panel.find('form .productbox').length));
+                tmp.find('input[name="product"]').attr('id', label);
+                tmp.find('label').attr('for', label);
+                if (index === 1) {
+                    tmp.find('input').prop('disabled', true);
+                    tmp.find('input[name="product"]').prop('checked', true);
+                }
+                tmp.find('.form1,.form2').on('change.custom', channels.update);
+                panel.find('form').append(tmp);
+            };
+
+            var update = function() {
+                var numProducts = parseInt($('#inputProducts').val());
+                $('div.channel').each(function(){
+                    while ($(this).find('form .productbox').length > numProducts) {
+                        $(this).find('form .productbox').last().remove();
+                    }
+                    while ($(this).find('form .productbox').length < numProducts) {
+                        addProduct(this);
+                    }
+                });
+                channels.update();
+            };
+
+            var refresh = function() {
+                channels.update();
+            };
+
+            return {
+                add: function() {
+                    var number = $('div.channel').length + 1;
+                    var tmp = $( $('#panelTemplate').html() );
+                    tmp.removeClass('tmp').addClass('channel').find('.channelNum').text(number);
+                    $('div.channel').last().after(tmp);
+                    update();
+                },
+                remove: function(element) {
+                    $(element).closest('.channel').remove();
+                    $('div.channel').each(function(i){
+                        var j = parseInt($(this).find('.channelNum').text());
+                        if (j !== i + 1) {
+                            $(this).find('.channelNum').text(i+1);
+                        }
+                    });
+                    refresh();
+                },
+                auto: function() {
+                    var numChannels = $("div.channel").length;
+                    var range = parseInt($('#inputQuantities').val());
+                    var step = 2*range/numChannels;
+                    var previous = range;
+                    $($("div.channel").get().reverse()).each(function() {
+                        var channelNum = parseInt($(this).find('.channelNum').text());
+                        if (channelNum !== 1) {
+                            var tmp =  previous - step;                           
+                            var text = `${tmp}-${previous}`;
+                            previous = tmp;
+                            $(this).find('input.range').val(text);
+                            $(this).find('input[name="product"]').prop('checked', true);
+                        }
+                    });
+                    refresh();
+                },
+                update: update,
+                refresh:refresh
+            }
+        }());
+
+        var getProduct = (function(){
+
+            var encodeMonth = function(month) {
+                switch(month.toUpperCase()) {
+                    case 'JAN': return 'F';
+                    case 'FEB': return 'G';
+                    case 'MAR': return 'H';
+                    case 'APR': return 'J';
+                    case 'MAY': return 'K';
+                    case 'JUN': return 'M';
+                    case 'JLY': return 'N';
+                    case 'AUG': return 'Q';
+                    case 'SEP': return 'U';
+                    case 'OCT': return 'V';
+                    case 'NOV': return 'X';
+                    case 'DEC': return 'Z';		
+                }	
+            };
+
+            return function(i) {
+                var m = moment().add(parseInt(i+1), 'months');
+                return 'WTI ' + encodeMonth(m.format('MMM')) + m.format('YY');
+            };
+        }());
+
+        var hexToRgb = function(hex) {
+            var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+
+        var getRandomColor = (function(){
+            var seed = 0;
+            var letters = '0123456789ABCDEF'.split('');
+
+            return function(i) {
+                var color = '#';
+                for (var j = 0; j < 6; j++ ) {
+                    color += letters[(seed + i + i*j + j) % 16];
+                }
+                return hexToRgb(color);
+            }
+        }());
+
+    </script>
+</body>
+</html>
