@@ -191,9 +191,16 @@
 
             var _queue = [];
 
+            var stop = function() {
+                    _queue.forEach(function(q){
+                        clearTimeout(q);
+                    });
+                };
+
             return {
 
                 run: function() {
+                    stop();
                     var delay = (1000 * parseFloat($('#inputDelay').val())) || 0;
                     var stddev = (1000 * parseFloat($('#inputDelayStd').val())) || 0;
 
@@ -272,11 +279,7 @@
 
                 },
 
-                stop: function() {
-                    _queue.forEach(function(q){
-                        clearTimeout(q);
-                    });
-                },
+                stop: stop,
 
                 newEquation: function() {
                     _seed = Date.now();
