@@ -322,7 +322,7 @@ function getOTCData() {
 			var dateCode = (codes[0] && codes[0].substring(codes[0].length - 2)) || '';
 
 			var putOrCall = (codes[1] && codes[1].substring(0, 1))||'';
-			var strike = (codes[1] && codes[1].substring(1)||'';
+			var strike = (codes[1] && codes[1].substring(1))||'';
 
 			var timeToExp = parseInt(moment(getExpiration(contract, dateCode)+' 13:30', 'YYYYMMDD HH:mm').format('X')) -
 				parseInt(moment( ( date+' '+time.substring(0,8) ) , 'MMDDYYYY HH:mm:ss').format('X')); // seconds
