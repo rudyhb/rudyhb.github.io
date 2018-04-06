@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Boxes</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css">    
+    <link rel="stylesheet" href="./assets/styles.css">        
+    <style>
+        .panel {
+            padding:0.5rem;
+            margin-right:0;
+            margin-left:0;
+            border-width: .2rem;
+            margin: 1rem 0 1rem 0;
+            border: solid #f7f7f9;
+            width:80%;
+            text-align: center;
+        }
+        .panel.footer {
+            padding:0.5rem;
+            margin: -1rem 0 0 0;
+        }
+        input.form1 {
+            width:100px;
+        }
+        input.form2 {
+            width:200px;
+        }
+        span.inline input {
+            display:inline-block;
+            margin: 0 10px;
+        }
+
+        .row {
+            margin-left:0;
+            margin-right:0;
+        }
+
+        .row.header {
+            margin-bottom: 10px;
+        }
+
+        .row.item {
+            width: 100%;
+            padding: 10px 0;
+            font-weight: bold;
+            font-size: 110%;
+        }
+
+        .remove-row {
+            position: absolute;
+            right: 0;
+            width: 15px;
+            height: 58px;
+            margin-top: -10px;
+        }
+
+        .remove-row:hover {
+            border-right: #d04a4a;
+            border-right-width:thick;
+            border-right-style:solid;
+            cursor: pointer;
+        }
+
+        .remove-row:hover:before {
+            content: "x ";
+            color: #d04a4a;
+            vertical-align: middle;
+            font-weight: bold;
+            padding-right: 10px;
+        }
+
+        #recommendations .item.row p {
+            background: white;
+        }
+
+        #runBtn {
+            position: absolute;
+            top: 20px;
+            right: 25%;
+        }
+
+    </style>
+</head>
+<body style="padding:20px">
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-6">
+
+                    <h3 style="margin-top:20px;"><code>Positions</code></h3>
+                    <a id="runBtn" href="javascript:void(0);" class="btn btn-outline-success" onclick="boxes.run();">RUN</a>
+                
+                <div id="positions" class="panel">  
+                    <div class="row header" style="width:100%;">
+                        <div class="col-sm-3">
+                            Month
+                        </div>
+                        <div class="col-sm-6">
+                            Product
+                        </div>
+                        <div class="col-sm-3">
+                            Position
+                        </div>
+                    </div>                                      
+                    <div class="tmp row" style="display:none">
+                        <div class="col-sm-3">
+                            <select class="form-control form1 month" placeholder="month" style="min-width:80px;"></select>
+                        </div>
+                        <div class="col-sm-6">
+                            <select class="form-control form1 product" placeholder="product"></select>
+                        </div>
+                        <div class="col-sm-3">
+                            <input type="number" step="1" class="form-control form1 position" style="max-width:80px;" placeholder="position">
+                        </div>
+                        <div class="remove-row" onclick="$(this).closest('.row').remove();boxes.refresh();"></div>
+                    </div>
+                </div>
+                <div class="panel footer">
+                    <div class="col-sm-12" style="text-align:center">
+                        <a href="javsascript:void(0);" class="btn btn-outline-primary" style="width:80%;">+</a>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="col-md-6">
+
+                <h3 style="margin-top:20px;"><code>Recommendations</code></h3>
+                
+                <div id="recommendations" class="panel">  
+                    <div class="row header" style="width:100%;">
+                        <div class="col-sm-4">
+                            Side
+                        </div>
+                        <div class="col-sm-4">
+                            Month
+                        </div>
+                        <div class="col-sm-4">
+                            Product
+                        </div>
+                    </div>                    
+                    <div class="tmp row" style="display:none">
+                        <div class="col-sm-4">
+                            <p class="side"></p>
+                        </div>
+                        <div class="col-sm-4">
+                            <p class="month"></p>
+                        </div>
+                        <div class="col-sm-4">
+                            <p class="product"></p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+    </div>
+        
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.20.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.bundle.min.js"></script>
+    <script src="./assets/gaussian.js"></script>
+    <script src="./assets/sha256.min.js"></script>
+    <script>
+
+    const products_ = {
+        NYMEX: [
+            'CL',
+            'BZ'
+        ],
+        ICE: [
+            'T',
+            'B'
+        ]
+    };
+
+    const switches_ = {
+        WTI: {
+            sideA: 'NYMEX.CL',
+            sideB: 'ICE.T'
+        },
+        BRENT: {
+            sideA: 'NYMEX.BZ',
+            sideB: 'ICE.B'
+        }
+    };
+
+    const boxes_ = {
+        'WTI/BRENT': {
+            sideA: 'WTI',
+            sideB: 'BRENT'
+        }
+    };
+
+    $(function(){
+
+        toastr.options = {
+            "closeButton": false,
+            "debug": false,
+            "newestOnTop": false,
+            "progressBar": false,
+            "positionClass": "toast-bottom-right",
+            "preventDuplicates": false,
+            "onclick": null,
+            "showDuration": "300",
+            "hideDuration": "1000",
+            "timeOut": "5000",
+            "extendedTimeOut": "1000",
+            "showEasing": "swing",
+            "hideEasing": "linear",
+            "showMethod": "fadeIn",
+            "hideMethod": "fadeOut"
+        };
+
+        $('#positions').next().find('a').click(boxes.newRow);
+
+        boxes.init();
+
+
+
+
+        $('#exampleProduct').text('"'+ getProduct(0) +'"');
+        channelSetup.update();
+
+        $('.form1:not(#inputProducts),.form2').on('change.custom', channels.update);
+        $('#inputProducts').on('change.custom', channelSetup.update);
+
+        $('#addChannelQuant').click(function(ev){
+            if (ev.stopPropagation) {
+                ev.stopPropagation();
+            }
+        });
+
+    });
+
+    const boxes = (function(){
+
+        const newRow = function(){
+            let container = $('#positions');
+            let tmp = container.find('.tmp').clone().removeClass('tmp').addClass('item').show();
+            container.append(tmp);
+            return tmp;
+        };
+
+        const recolor = function(){
+            $('#positions .row.item').each(function(i){
+                let color = randColor.get(i);
+                $(this).css('background', `rgb(${color.r}, ${color.g}, ${color.b}, .4)`);
+            });
+        };
+
+        const makeMonthSelect = function(){
+
+            let html = '';
+            getMonth.list().forEach((month)=>{
+                html += `<option value="${month}">${month}</option>`;
+            });
+            $('#positions .tmp select.month').append(html);
+        };
+
+        const makeProductSelect = function() {
+            let html = '';
+            productTools.list().sort().forEach((product)=>{
+                html += `<option value="${product}">${product.split('.').join(': ')}</option>`;
+            });
+            $('#positions .tmp select.product').append(html);
+        };
+
+        const refresh = function(){
+            return recolor();
+        };
+
+        const drawSwitches = function(possibleSwitches){
+            return new Promise((resolve)=>{
+                $('#recommendations .row.item').remove();
+                
+                const makeRow = function() {
+                    let container = $('#recommendations');
+                    
+                    let tmp = container.find('.tmp').clone().removeClass('tmp').addClass('item').show();
+                    container.append(tmp);
+                    return tmp;
+                };
+                let list = [];
+                Object.keys(possibleSwitches).forEach((month)=>{
+                    Object.keys(possibleSwitches[month]).forEach((switchName)=>{
+                        list.push({
+                            name: switchName,
+                            month: month,
+                            trade: possibleSwitches[month][switchName]
+                        })
+                    });
+                })
+                list.sort((a, b)=>{
+                    let an = Math.abs(a.trade);
+                    let bn = Math.abs(b.trade);
+                    if (an > bn) return -1;
+                    if (an < bn) return 1;
+                    return 0;
+                });
+                console.log('list', list)
+
+                const getRGB = function(str){
+                    var match = str.match(/rgba?\((\d{1,3}), ?(\d{1,3}), ?(\d{1,3})\)?(?:, ?(\d(?:\.\d?))\))?/);
+                    return match ? {
+                        r: match[1],
+                        g: match[2],
+                        b: match[3]
+                    } : {};
+                };
+
+                list.forEach((s)=>{
+                    let side = (s.trade < 0) ? 'SELL' : 'BUY';
+                    side += ` ${Math.abs(s.trade).toFixed(0)}`;
+                    let row = makeRow();
+                    row
+                        .find('.side')
+                            .text(side)
+                            .end()
+                        .find('.month')
+                            .text(s.month)
+                            .end()
+                        .find('.product')
+                            .text(`${s.name} switch`)
+                            .end();
+                    let sideA = switches_[s.name].sideA;
+                    let sideB = switches_[s.name].sideB;
+                    let colorA = colorB = {r:1, g:1, b:1};
+                    $('#positions .item.row').each(function(){
+                        if ($(this).find('.month').val() === s.month) {
+                            if ($(this).find('.product').val() === sideA) {
+                                colorA = getRGB( $(this).css('background') );
+                            } else if ($(this).find('.product').val() === sideB) {
+                                colorB = getRGB( $(this).css('background') );
+                            }
+                        }
+                    });
+
+                    let cA = `rgba(${colorA.r},${colorA.g},${colorA.b},0.4)`;
+                    let cB = `rgba(${colorB.r},${colorB.g},${colorB.b},0.4)`;
+
+                    row.css('background', `linear-gradient(to right, ${cA} 0%, ${cA} 50%, ${cB} 50%)`);
+                        
+                });
+                return resolve(list);
+            });
+        };
+
+        const makeSwitches = function() {
+            return new Promise((resolve)=>{
+                let positions = {};
+                $('#positions .item').each(function(){
+                    let month = $(this).find('select.month').val();
+                    let product = $(this).find('select.product').val();
+                    let position = parseInt($(this).find('input.position').val()) || 0;
+
+                    if (!positions[month]) {
+                        positions[month] = {};
+                    }
+                    if (!positions[month][product]) {
+                        positions[month][product] = position;
+                    } else {
+                        positions[month][product] += position;
+                    }
+
+                });
+
+                let possibleSwitches = [];
+                Object.keys(positions).forEach((month)=>{
+                    let products = Object.keys(positions[month]);
+
+                    Object.keys(switches_).forEach((switchName)=>{
+                        let thisSwitch = switches_[switchName];
+                        let sideA = thisSwitch.sideA;
+                        let sideB = thisSwitch.sideB;
+                        if (products.indexOf(sideA) !== -1 && products.indexOf(sideB) !== -1) {
+                            if (positions[month][sideA] && positions[month][sideB] && positions[month][sideA]*positions[month][sideB] < 0) {
+                                let sideANegative = positions[month][sideA] < 0;
+                                let quant = Math.min( Math.abs(positions[month][sideA]), Math.abs(positions[month][sideB]) );
+                                if (!possibleSwitches[month]) {
+                                    possibleSwitches[month] = {};
+                                }
+                                possibleSwitches[month][switchName] = (sideANegative ? -1 : 1) * quant;
+                            }
+                        }
+                    });
+                    
+                });
+                console.log('switches: ', possibleSwitches);
+                return resolve(possibleSwitches);
+            });            
+        };
+
+        const initialPosition = function(){
+            let positions = [
+                {
+                    month: getMonth.i(0),
+                    product: 'NYMEX.CL',
+                    position: 250
+                },
+                {
+                    month: getMonth.i(2),
+                    product: 'NYMEX.CL',
+                    position: 300
+                },
+                {
+                    month: getMonth.i(5),
+                    product: 'NYMEX.CL',
+                    position: -200
+                },
+                {
+                    month: getMonth.i(7),
+                    product: 'NYMEX.CL',
+                    position: -250
+                },
+                {
+                    month: getMonth.i(0),
+                    product: 'ICE.T',
+                    position: 100
+                },
+                {
+                    month: getMonth.i(2),
+                    product: 'ICE.T',
+                    position: -250
+                },
+                {
+                    month: getMonth.i(5),
+                    product: 'ICE.T',
+                    position: 300
+                },
+                {
+                    month: getMonth.i(0),
+                    product: 'NYMEX.BZ',
+                    position: 150
+                },
+                {
+                    month: getMonth.i(2),
+                    product: 'NYMEX.BZ',
+                    position: -400
+                },
+                {
+                    month: getMonth.i(5),
+                    product: 'NYMEX.BZ',
+                    position: 600
+                },
+                {
+                    month: getMonth.i(2),
+                    product: 'ICE.B',
+                    position: 500
+                },
+                {
+                    month: getMonth.i(5),
+                    product: 'ICE.B',
+                    position: -350
+                },
+            ];
+
+            positions.forEach(function(position){
+                let row = $(newRow());
+                row
+                    .find(`select.product option[value="${position.product}"]`)
+                        .prop('selected', true)
+                        .end()
+                    .find(`select.month option[value="${position.month}"]`)
+                        .prop('selected', true)
+                        .end()
+                    .find('input.position')
+                        .val(position.position)
+                        .end();
+            });
+            
+            recolor();
+        };
+
+        return {
+            init:function(){
+                makeMonthSelect();
+                makeProductSelect();
+                initialPosition();
+            },
+            newRow: ()=>{newRow(); refresh();},
+            refresh: refresh,
+            run: function(){
+                makeSwitches()
+                .then(drawSwitches)
+                .then(refresh)
+            }
+        };
+    }());
+
+    const productTools = (function(){
+
+        return {
+            list: function(){
+                let prods = [];
+                Object.keys(products_).forEach((exchange)=>{
+                    products_[exchange].forEach((product)=>{
+                        prods.push( `${exchange}.${product}` );
+                    });
+                })
+                return prods;
+            }
+        };
+    }());
+
+    const getMonth = (function(){
+
+        const encodeMonth = function(month) {
+            switch(month.toUpperCase()) {
+                case 'JAN': return 'F';
+                case 'FEB': return 'G';
+                case 'MAR': return 'H';
+                case 'APR': return 'J';
+                case 'MAY': return 'K';
+                case 'JUN': return 'M';
+                case 'JUL': return 'N';
+                case 'AUG': return 'Q';
+                case 'SEP': return 'U';
+                case 'OCT': return 'V';
+                case 'NOV': return 'X';
+                case 'DEC': return 'Z';		
+            }	
+        };
+
+        return {
+            list: function(){
+                let full_years = 2;
+                let extra = 2;
+
+                let months = [];
+                let m;
+                for (let i = 1; i <= full_years*12; i++) {
+                    m = moment().add(parseInt(i), 'months');
+                    months.push(m.format('MMM') + m.format('YY'));
+                }
+
+                if (extra) {
+                    let last = parseInt(m.format('M'));
+                    if (last < 6) {
+                        m = m.add(6-last, 'months');
+                        months.push(m.format('MMM') + m.format('YY'));
+                    } else if (last === 12) {
+                        m = m.add(6, 'months');
+                        months.push(m.format('MMM') + m.format('YY'));
+                    } else {
+                        m = m.add(12-last, 'months');
+                        months.push(m.format('MMM') + m.format('YY'));
+                    }
+                    m = m.add(6, 'months');
+                    months.push(m.format('MMM') + m.format('YY'));
+                    for (let i = 1; i <= 2*extra; i++) {
+                        m = m.add(6, 'months');
+                        months.push(m.format('MMM') + m.format('YY'));
+                    }
+                }
+
+                return months;
+            },
+            i: function(i) {
+                let m = moment().add(parseInt(i+1), 'months');
+                return m.format('MMM') + m.format('YY');
+            }
+        };
+    }());
+
+        var channels = (function(){
+
+            var _channels = [];
+            var _charts = [];
+
+            var _seed = 12;
+            
+            var f = function(product, quantity) {
+                var y0 = 1e6 * ( rand(`s${_seed}p${product}`) % 4 + 3 ) / 4;
+                var x0 = ( (rand(`s${_seed}p${product}8`) % 4) === 0 ? 0 : 1 ) * (2*(rand(`s${_seed}p${product}2`) % 2) - 1) * ( rand(`s${_seed}p${product}3`) % 337 )/336 * 1900;
+                var k0 = .1 + .4 * ( rand(`s${_seed}p${product}4`) % 101 )/100;
+                var k = k0 * y0 / Math.max(Math.abs(x0), 1);
+                var dk = 1.7 + .4 * ( rand(`s${_seed}p${product}5`) % 101 )/100;
+                var dx = Math.abs((0.1 + .8 * ( rand(`s${_seed}p${product}6`) % 101 )/100) * x0);
+
+                if ( quantity < x0 - dx ) {
+                    return (  (-dk*k)*(quantity - (x0-dx)) + y0 - k*(-dx) );
+                }
+                if ( quantity < x0 ) {
+                    return ( y0 - k*(quantity-x0) );
+                }
+                if ( quantity < x0 + dx ) {
+                    return ( y0 + k*(quantity-x0) );
+                }
+                return ( dk*k*(quantity - (x0+dx)) + y0 + k*(dx) );
+            };
+
+            var _queue = [];
+
+            var stop = function() {
+                    _queue.forEach(function(q){
+                        clearTimeout(q);
+                    });
+                };
+
+            return {
+
+                run: function() {
+                    stop();
+                    var delay = (1000 * parseFloat($('#inputDelay').val())) || 0;
+                    var stddev = (1000 * parseFloat($('#inputDelayStd').val())) || 0;
+
+                    randN.init(delay, stddev);
+
+                    var numChannels = _channels.length - 1;
+                    var numProducts = parseInt($('#inputProducts').val());
+
+                    for (let i = numProducts; i < _charts.length; i++) {
+                        $(`#myChart${i}`).closest('div.chart').fadeOut();
+                    }
+
+                    for (let i = 0; i < numProducts; i++) {
+                        if (!$(`#myChart${i}`).length) {
+                            if (i % 2 === 0) {
+                                $('#charts').append(`<div class="row"><div class="chart col-md-6"></div><div class="chart col-md-6"></div></div>`);
+                                $('#charts div.row').last().find('div.chart').eq(0).append( `<canvas id="myChart${i}" width="400" height="400"></canvas>` );
+                            } else {
+                                $('#charts div.row').last().find('div.chart').eq(1).append( `<canvas id="myChart${i}" width="400" height="400"></canvas>` );
+                            }
+                            
+                        }
+                        $(`#myChart${i}`).closest('div.chart').fadeIn();
+                        if (!_charts[i]) {
+                            _charts[i] = new Chart(`myChart${i}`, {
+                                type: 'scatter',
+                                data: {
+                                    datasets: []
+                                },
+                                options: {
+                                    title: {
+                                        display: true,
+                                        text: getProduct(i)
+                                    },
+                                    scales: {
+                                        xAxes: [{
+                                            type: 'linear',
+                                            position: 'bottom'
+                                        }]
+                                    }
+                                }
+                            });
+                        }
+                        _charts[i].data.labels = [];
+                        _charts[i].data.datasets = [];
+                        for (let j = 1; j <= numChannels; j++) {
+                            _charts[i].data.labels.push(`channel ${j}`);
+                            var color = randColor.get(j);
+                            _charts[i].data.datasets.push({
+                                label: `channel ${j}`,
+                                backgroundColor: `rgba(${color.r},${color.g},${color.b},0.5)`,
+                                borderColor: `rgba(${color.r},${color.g},${color.b},0.8)`,
+                                data: []
+                            });
+                        }
+                        _charts[i].update();                        
+                    }
+
+                    _channels.forEach(function(c, j){
+                        let i = 0;
+                        let max = c.length;
+                        let fun = function fun() {
+                            if (i >= max) {
+                                return;
+                            }
+                            _charts[c[i].prod].data.datasets[j-1].data.push({
+                                x: c[i].quant,
+                                y: f(c[i].prod, c[i].quant)
+                            });
+                            _charts[c[i].prod].update();
+                            i++;
+                            _queue[j] = setTimeout(fun, Math.max(0,randN.get()));
+                        };
+                        fun();
+                    });
+
+                },
+
+                stop: stop,
+
+                newEquation: function() {
+                    _seed = Date.now();
+                    toastr['success']('equation changed');
+                },
+                
+                update: function() {
+                    var products = [];
+                    var numProducts = parseInt($('#inputProducts').val());
+                    for (let i = 0; i < numProducts; i++) {
+                        products.push([]);
+                    }
+                    var end = parseInt($('#inputQuantities').val());
+                    $('#inputQuantitiesB').text(-end);
+                    var step = parseInt($('#inputStep').val());
+                    for (let i = 0; i < ( end/step*2 + 1 ); i++) {
+                        products.forEach(function(p){
+                            p.push({
+                                quant: (-end + step*i),
+                                channel: null
+                            });
+                        });
+                    }
+
+                    $($("div.channel").get().reverse()).each(function() {
+                        var channelNum = parseInt($(this).find('.channelNum').text());
+                        if (channelNum !== 1) {
+                            $(this).find('form .productbox').each(function(productNum){
+                                if ($(this).find('input[name="product"]').prop('checked')) {
+                                    var ranges = ($(this).find('input.range').val() || '').split(',');
+                                    ranges.forEach(range => {
+                                        if (range) {
+                                            var a, b;
+                                            var s = range.split('-');
+                                            switch (s.length) {
+                                                case 1:
+                                                    a = parseInt(s[0]);
+                                                    b = a;
+                                                    break;
+                                                case 2:
+                                                    a = parseInt(s[0]);
+                                                    b = parseInt(s[1]);
+                                                    break;
+                                                case 3:
+                                                    a = parseInt('-'+s[1]);
+                                                    b = parseInt(s[2]);
+                                                    break;
+                                                case 4:
+                                                a = parseInt('-'+s[1]);
+                                                b = parseInt('-'+s[3]);
+                                                    break;
+                                                default:
+                                                    break;
+                                            }
+
+                                            products[productNum].forEach(function(p){
+                                                if (p.channel === null && p.quant >= a && p.quant <= b ) {
+                                                    p.channel = channelNum;
+                                                }
+                                            });                                        
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    });
+
+                    _channels = [];
+
+                    products.forEach(function(prod, pI){
+                        var channel1 = [];
+                        var channel1i = 0;
+                        var previous = '';
+
+                        prod.forEach(function(p, i){
+                            if (p.channel === null) {
+                                if (!channel1[channel1i]) {
+                                    channel1[channel1i] = Math.round(p.quant).toString();
+                                }
+                                previous = Math.round(p.quant);
+                                p.channel = 1;
+                            } else {
+                                if (previous !== '') {
+                                    channel1[channel1i] += '-' + previous;
+                                    previous = '';
+                                    channel1i++;
+                                }
+                            }
+                            if (!_channels[p.channel]) {
+                                _channels[p.channel] = [];
+                            }
+                            _channels[p.channel].push({
+                                quant: p.quant,
+                                prod: pI
+                            });
+                        });
+
+                        if (previous !== '' && channel1[channel1i]) {
+                            channel1[channel1i] += '-' + previous;
+                            previous = '';
+                            channel1i++;
+                        }
+                        $("div.channel").eq(0).find('input.range').eq(pI).val( channel1.join(',') );
+                    });                    
+
+                    //console.log('channels', _channels)
+                }
+
+            }
+        }());
+
+        var channelSetup = (function(){
+
+            var id = 0;
+            var addProduct = function(panel) {
+                panel = $(panel).closest('.channel');
+                var label = 'prodcheck' + (id++);
+                var index = parseInt(panel.find('.channelNum').text());
+                var tmp = $($('#productTemplate').html());
+                tmp.find('.productName').text(getProduct(panel.find('form .productbox').length));
+                tmp.find('input[name="product"]').attr('id', label).on('change', channels.update);
+                tmp.find('label').attr('for', label);
+                if (index === 1) {
+                    tmp.find('input').prop('disabled', true);
+                    tmp.find('input[name="product"]').prop('checked', true);
+                }
+                tmp.find('.form1,.form2').on('change.custom', channels.update);
+                panel.find('form').append(tmp);
+            };
+
+            var update = function() {
+                var numProducts = parseInt($('#inputProducts').val());
+                $('div.channel').each(function(){
+                    while ($(this).find('form .productbox').length > numProducts) {
+                        $(this).find('form .productbox').last().remove();
+                    }
+                    while ($(this).find('form .productbox').length < numProducts) {
+                        addProduct(this);
+                    }
+                });
+                channels.update();
+            };
+
+            var refresh = function() {
+                channels.update();
+            };
+
+            return {
+                add: function() {
+                    var number = $('div.channel').length + 1;
+                    var tmp = $( $('#panelTemplate').html() );
+                    tmp.removeClass('tmp').addClass('channel').find('.channelNum').text(number);
+                    $('div.channel').last().after(tmp);
+                    update();
+                },
+                addChannels: function(elem) {
+                    var amount = parseInt($('#addChannelQuant').val());
+                    for (let i = 0; i < amount; i++) {
+                        let number = $('div.channel').length + 1;
+                        let tmp = $( $('#panelTemplate').html() );
+                        tmp.removeClass('tmp').addClass('channel').find('.channelNum').text(number);
+                        $('div.channel').last().after(tmp);
+                    }
+                    update();
+                    channelSetup.autoProduct();
+                },
+                remove: function(element) {
+                    $(element).closest('.channel').remove();
+                    $('div.channel').each(function(i){
+                        var j = parseInt($(this).find('.channelNum').text());
+                        if (j !== i + 1) {
+                            $(this).find('.channelNum').text(i+1);
+                        }
+                    });
+                    refresh();
+                },
+                auto: function() {
+                    $('input.range').val('');
+                    var numChannels = $("div.channel").length;
+                    var range = parseInt($('#inputQuantities').val());
+                    var step = 2*range/numChannels;
+                    var previous = range;
+                    $($("div.channel").get().reverse()).each(function() {
+                        var channelNum = parseInt($(this).find('.channelNum').text());
+                        if (channelNum !== 1) {
+                            var tmp =  previous - step;                           
+                            var text = `${Math.round(tmp)}-${Math.round(previous)}`;
+                            previous = tmp;
+                            $(this).find('input.range').val(text);
+                            $(this).find('input[name="product"]').prop('checked', true);
+                        }
+                    });
+                    refresh();
+                },
+                autoProduct: function() {
+                    $('input.range').val('');
+                    var numProducts = parseInt($('#inputProducts').val());
+                    var numChannels = $("div.channel").length;                    
+
+                    var range = parseInt($('#inputQuantities').val());
+                    var step = 2*range/numChannels;
+
+                    var productNum = 0;
+
+                    for (let i = 0; i < Math.floor(numProducts/numChannels); i++) {
+                        $("div.channel").each(function() {
+                            var channelNum = parseInt($(this).find('.channelNum').text());
+                            if (channelNum !== 1) {
+                                $(this).find('input.range').eq(productNum).val(`${-range}-${range}`);
+                                $(this).find('input[name="product"]').eq(productNum).prop('checked', true);
+                            }
+                            productNum++;
+                        });
+                    }
+
+                    if (productNum < numProducts) {
+                        var previous = range;
+                        $($("div.channel").get().reverse()).each(function() {
+                            var channelNum = parseInt($(this).find('.channelNum').text());
+                            if (channelNum !== 1) {
+                                var tmp =  previous - step;                           
+                                var text = `${Math.round(tmp)}-${Math.round(previous)}`;
+                                previous = tmp;
+                                for (let i = numProducts - 1; i >= productNum; i--) {
+                                    $(this).find('input.range').eq(i).val(text);
+                                    $(this).find('input[name="product"]').eq(i).prop('checked', true);
+                                }
+                            }
+                        });
+                    }
+                    
+                    refresh();
+                },
+                update: update,
+                refresh:refresh
+            }
+        }());
+
+        var getProduct = (function(){
+
+            var encodeMonth = function(month) {
+                switch(month.toUpperCase()) {
+                    case 'JAN': return 'F';
+                    case 'FEB': return 'G';
+                    case 'MAR': return 'H';
+                    case 'APR': return 'J';
+                    case 'MAY': return 'K';
+                    case 'JUN': return 'M';
+                    case 'JUL': return 'N';
+                    case 'AUG': return 'Q';
+                    case 'SEP': return 'U';
+                    case 'OCT': return 'V';
+                    case 'NOV': return 'X';
+                    case 'DEC': return 'Z';		
+                }	
+            };
+
+            return function(i) {
+                var m = moment().add(parseInt(i+1), 'months');
+                return 'WTI ' + encodeMonth(m.format('MMM')) + m.format('YY');
+            };
+        }());
+
+        var hexToRgb = function(hex) {
+            var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+
+        var rand = function(string) {
+            var t = sha256(string);
+            return parseInt(t.substring(t.length-5), 16);
+        };
+
+        var randN = (function(){
+            var distribution;
+            return {
+                init: function(delay, stddev){
+                    if (stddev > 0) {
+                        distribution = gaussian(delay, stddev);
+                    } else {
+                        distribution = delay;
+                    }
+                },
+                get: function(){
+                    if (typeof distribution === 'number') {
+                        return distribution;
+                    }
+                    return distribution.ppf(Math.random());
+                }
+            };
+        }());
+
+        var randColor = (function(){
+            var seed = 1234567;
+            var letters = '0123456789ABCDEF'.split('');
+
+            return {
+                get: function(i) {
+                    var color = '#';
+                    for (var j = 0; j < 6; j++ ) {
+                        color += letters[ rand(seed + i + i*j + 2*j) % 16];
+                    }
+                    return hexToRgb(color);
+                },
+                change: function() {
+                    seed = Date.now();
+                    toastr['success']('done!');
+                }
+            };
+        }());
+
+    </script>
+</body>
+</html>
