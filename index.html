@@ -310,7 +310,13 @@ function getOTCData() {
 
 			});
 
-			var codes = code.split('|');
+			var codes;
+			
+			if (code.indexOf('|') !== -1) {
+				codes = code.split('|');
+			} else {
+				codes = code.split(' ');
+			}			
 
 			var contract = (codes[0] && codes[0].substring(0, codes[0].length - 2)) || '';
 			var dateCode = (codes[0] && codes[0].substring(codes[0].length - 2)) || '';
