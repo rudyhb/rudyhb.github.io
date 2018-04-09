@@ -334,7 +334,7 @@
             return new Promise((resolve)=>{
                 $('#positions .row.item').each(function(i){
                     let color = randColor.get(i);
-                    $(this).css('background', `rgb(${color.r}, ${color.g}, ${color.b}, .4)`);
+                    $(this).css('background', `rgba(${color.r}, ${color.g}, ${color.b}, .4)`);
                 });
                 return resolve();
             });            
@@ -466,9 +466,9 @@
                     $('#positions .item.row').each(function(){
                         if ($(this).find('.month').val() === s.month) {
                             if ($(this).find('.product').val() === sideA) {
-                                colorA = getRGB( $(this).css('background') );
+                                colorA = getRGB( $(this).css('background-color') );
                             } else if ($(this).find('.product').val() === sideB) {
-                                colorB = getRGB( $(this).css('background') );
+                                colorB = getRGB( $(this).css('background-color') );
                             }
                         }
                     });
@@ -625,16 +625,16 @@
                     $('#positions .item.row').each(function(){
                         if ($(this).find('.month').val() === month1) {
                             if ($(this).find('.product').val() === sideA) {
-                                colorA = getRGB( $(this).css('background') );
+                                colorA = getRGB( $(this).css('background-color') );
                             } else if ($(this).find('.product').val() === sideB) {
-                                colorB = getRGB( $(this).css('background') );
+                                colorB = getRGB( $(this).css('background-color') );
                             }
                         }
                         if ($(this).find('.month').val() === month2) {
                             if ($(this).find('.product').val() === sideC) {
-                                colorC = getRGB( $(this).css('background') );
+                                colorC = getRGB( $(this).css('background-color') );
                             } else if ($(this).find('.product').val() === sideD) {
-                                colorD = getRGB( $(this).css('background') );
+                                colorD = getRGB( $(this).css('background-color') );
                             }
                         }
                     });
@@ -753,23 +753,23 @@
                     $('#positions .item.row').each(function(){
                         if ($(this).find('.month').val() === month1) {
                             if ($(this).find('.product').val() === sideA) {
-                                colorA = getRGB( $(this).css('background') );
+                                colorA = getRGB( $(this).css('background-color') );
                             } else if ($(this).find('.product').val() === sideB) {
-                                colorC = getRGB( $(this).css('background') );
+                                colorC = getRGB( $(this).css('background-color') );
                             } else if ($(this).find('.product').val() === sideC) {
-                                colorE = getRGB( $(this).css('background') );
+                                colorE = getRGB( $(this).css('background-color') );
                             } else if ($(this).find('.product').val() === sideD) {
-                                colorG = getRGB( $(this).css('background') );
+                                colorG = getRGB( $(this).css('background-color') );
                             }
                         } else if ($(this).find('.month').val() === month2) {
                             if ($(this).find('.product').val() === sideA) {
-                                colorB = getRGB( $(this).css('background') );
+                                colorB = getRGB( $(this).css('background-color') );
                             } else if ($(this).find('.product').val() === sideB) {
-                                colorD = getRGB( $(this).css('background') );
+                                colorD = getRGB( $(this).css('background-color') );
                             } else if ($(this).find('.product').val() === sideC) {
-                                colorF = getRGB( $(this).css('background') );
+                                colorF = getRGB( $(this).css('background-color') );
                             } else if ($(this).find('.product').val() === sideD) {
-                                colorH = getRGB( $(this).css('background') );
+                                colorH = getRGB( $(this).css('background-color') );
                             }
                         }
                     });
