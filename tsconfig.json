@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "allowJs": true,
+        "noEmit": true,
+        "checkJs": true,
+        "lib": ["es2017"]
+    },
+    "include": [
+        "lib"
+    ],
+    "typeAcquisition": {
+        "enable": true
+    }
+}
